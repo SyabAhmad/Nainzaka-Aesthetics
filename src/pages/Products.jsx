@@ -65,9 +65,12 @@ const Products = () => {
       );
     }
     if (selectedCategory !== "all") {
-      filtered = filtered.filter(product =>
-        product.category === selectedCategory
-      );
+      const selectedCatObj = categories.find(c => c.id === selectedCategory);
+      if (selectedCatObj) {
+        filtered = filtered.filter(product =>
+          product.category === selectedCatObj.name // Filter by category name
+        );
+      }
     }
     filtered = filtered.filter(product =>
       product.price >= priceRange[0] && product.price <= priceRange[1]
@@ -85,7 +88,7 @@ const Products = () => {
       }
     });
     setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory, priceRange, sortBy]);
+  }, [products, searchTerm, selectedCategory, priceRange, sortBy, categories]);
 
   const handleViewProduct = (productId) => {
     navigate(`/product/${productId}`);
@@ -93,31 +96,32 @@ const Products = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex justify-center items-center bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+      <div className="min-h-screen flex justify-center items-center bg-gray-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-200 border-t-rose-500 mx-auto mb-4"></div>
-          <p className="text-lg text-rose-600 font-medium">Loading products...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-pink-500 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600 font-medium">Loading our collection...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+    <div className="min-h-screen bg-gray-50">
       {/* Search Bar */}
-      <div className="bg-gradient-to-r from-purple-50 via-white to-pink-50 py-8">
-        <div className="container mx-auto px-6">
-          <div className="max-w-2xl mx-auto">
+      <div className="bg-white py-8 border-b border-gray-100">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <h1 className="text-3xl font-bold text-gray-900 text-center mb-6">Our Premium Collection</h1>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search for products..."
+                placeholder="Search products by name or description..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full p-5 pr-14 rounded-2xl text-gray-800 border-2 border-pink-200 focus:outline-none focus:ring-4 focus:ring-pink-100 text-lg shadow"
+                className="w-full p-4 pl-12 rounded-lg text-gray-700 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent shadow-sm"
               />
-              <div className="absolute inset-y-0 right-0 pr-4 flex items-center">
-                <svg className="w-6 h-6 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center">
+                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
               </div>
@@ -127,88 +131,96 @@ const Products = () => {
       </div>
 
       {/* Main Product Grid */}
-      <div className="container mx-auto px-6 py-8" id="products">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar Filters */}
-          <div className="lg:w-1/4">
+          <div className="lg:w-72 flex-shrink-0">
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="lg:hidden w-full mb-4 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/50 flex items-center justify-between"
+              className="lg:hidden w-full mb-4 bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between"
             >
-              <span className="font-semibold text-gray-800">Filters</span>
-              <svg className={`w-5 h-5 transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <span className="font-medium text-gray-700">Filters & Sorting</span>
+              <svg className={`w-5 h-5 text-gray-500 transform transition-transform ${isFilterOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
               </svg>
             </button>
-            <div className={`${isFilterOpen ? 'block' : 'hidden'} lg:block space-y-6`}>
+            <div className={`${isFilterOpen ? 'block' : 'hidden'} lg:block space-y-6 bg-white p-6 rounded-lg shadow-sm border border-gray-200`}>
               {/* Categories */}
-              <div className="bg-white/90 rounded-2xl shadow-lg border border-white/50 p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">📦</span> Categories
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Categories
                 </h3>
                 <div className="space-y-2">
                   {categories.map((category) => (
                     <button
                       key={category.id}
                       onClick={() => setSelectedCategory(category.id)}
-                      className={`w-full text-left p-3 rounded-lg transition-all duration-300 flex items-center space-x-3 ${
+                      className={`w-full text-left px-3 py-2 rounded-md transition-colors flex items-center space-x-2 text-sm ${
                         selectedCategory === category.id
-                          ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-lg'
-                          : 'hover:bg-rose-50 text-gray-700'
+                          ? 'bg-pink-50 text-pink-700 font-medium'
+                          : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
-                      <span className="text-lg">{category.icon || "🛍️"}</span>
-                      <span className="font-medium">{category.name}</span>
+                      <span className="text-base">{category.icon || "🛍️"}</span>
+                      <span>{category.name}</span>
                     </button>
                   ))}
                 </div>
               </div>
+              
               {/* Price Range */}
-              <div className="bg-white/90 rounded-2xl shadow-lg border border-white/50 p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">💸</span> Price Range (PKR)
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Price Range (PKR)
                 </h3>
                 <div className="space-y-4">
-                  <div className="flex justify-between text-sm text-gray-600">
-                    <span>₨{priceRange[0]}</span>
-                    <span>₨{priceRange[1]}</span>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>₨{priceRange[0].toLocaleString()}</span>
+                    <span>₨{priceRange[1].toLocaleString()}</span>
                   </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="50000"
-                    step="500"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-                    className="w-full h-2 bg-rose-200 rounded-lg appearance-none cursor-pointer slider"
-                  />
-                  <div className="flex gap-2">
+                  <div className="px-2">
                     <input
-                      type="number"
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
-                      className="w-1/2 p-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
-                      placeholder="Min"
-                    />
-                    <input
-                      type="number"
+                      type="range"
+                      min="0"
+                      max="50000"
+                      step="500"
                       value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 50000])}
-                      className="w-1/2 p-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300"
-                      placeholder="Max"
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full h-1 bg-gray-200 rounded-full appearance-none cursor-pointer accent-pink-500"
                     />
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Min</label>
+                      <input
+                        type="number"
+                        value={priceRange[0]}
+                        onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
+                        className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs text-gray-500 mb-1">Max</label>
+                      <input
+                        type="number"
+                        value={priceRange[1]}
+                        onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 50000])}
+                        className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-pink-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+              
               {/* Sort Options */}
-              <div className="bg-white/90 rounded-2xl shadow-lg border border-white/50 p-6">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center">
-                  <span className="mr-2">↕️</span> Sort By
+              <div>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                  Sort By
                 </h3>
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="w-full p-3 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
+                  className="w-full p-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-pink-500"
                 >
                   <option value="name">Name (A-Z)</option>
                   <option value="price-low">Price (Low to High)</option>
@@ -217,72 +229,75 @@ const Products = () => {
               </div>
             </div>
           </div>
+          
           {/* Products Grid */}
-          <div className="lg:w-3/4">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6">
+              <div className="mb-4 sm:mb-0">
+                <h2 className="text-xl font-semibold text-gray-900">
                   {selectedCategory === "all" ? "All Products" : categories.find(c => c.id === selectedCategory)?.name}
                 </h2>
-                <p className="text-gray-600">{filteredProducts.length} products found</p>
+                <p className="text-sm text-gray-500">{filteredProducts.length} {filteredProducts.length === 1 ? 'item' : 'items'}</p>
               </div>
             </div>
+            
             {filteredProducts.length === 0 ? (
-              <div className="text-center py-20">
-                <div className="w-24 h-24 bg-gradient-to-r from-rose-200 to-pink-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-12 h-12 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+              <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
+                <div className="w-20 h-20 bg-pink-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-10 h-10 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">No products found</h3>
-                <p className="text-gray-600">Try adjusting your filters or search terms</p>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No products match your search</h3>
+                <p className="text-gray-500 max-w-md mx-auto">Try adjusting your filters or search for something different</p>
+                <button 
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedCategory("all");
+                    setPriceRange([0, 50000]);
+                  }}
+                  className="mt-4 px-4 py-2 text-sm font-medium text-pink-600 hover:text-pink-700"
+                >
+                  Reset all filters
+                </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredProducts.map((product) => (
-                  <div key={product.id} className="group bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-white/50 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2">
-                    <div className="relative overflow-hidden">
+                  <div key={product.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100">
+                    <div className="relative aspect-square overflow-hidden">
                       <img 
                         src={product.imageUrl} 
                         alt={product.name}
-                        className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-500"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           e.target.src = 'https://via.placeholder.com/300x300/F3F4F6/9CA3AF?text=No+Image';
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                      <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <svg className="w-5 h-5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                      </div>
+                      {!product.inStock && (
+                        <div className="absolute top-2 right-2 bg-rose-500 text-white text-xs font-medium px-2 py-1 rounded">
+                          Out of Stock
+                        </div>
+                      )}
                     </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-gray-800 mb-3 group-hover:text-rose-600 transition-colors">
+                    <div className="p-4">
+                      <h3 className="font-medium text-gray-900 mb-1 line-clamp-1">
                         {product.name}
                       </h3>
-                      <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      <p className="text-gray-500 text-sm mb-3 line-clamp-2">
                         {product.description}
                       </p>
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
+                      <div className="flex items-center justify-between mt-4">
+                        <span className="text-lg font-semibold text-gray-900">
                           ₨{product.price?.toLocaleString()}
                         </span>
-                        <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                          {product.inStock ? "In Stock" : "Out of Stock"}
-                        </div>
+                        <button 
+                          onClick={() => handleViewProduct(product.id)}
+                          className="text-sm font-medium px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-md transition-colors duration-200"
+                        >
+                          View Details
+                        </button>
                       </div>
-                      <button 
-                        onClick={() => handleViewProduct(product.id)}
-                        className="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                        </svg>
-                        <span>View & Order</span>
-                      </button>
                     </div>
                   </div>
                 ))}
@@ -291,8 +306,6 @@ const Products = () => {
           </div>
         </div>
       </div>
-
-      
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../firebase";
+import { db, storage } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Add this import
 import { useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
@@ -33,12 +34,80 @@ const AddProduct = () => {
   const [success, setSuccess] = useState("");
 
   const categories = [
-    { id: "skincare", name: "Skincare", subCategories: ["Cleansers", "Moisturizers", "Serums", "Masks", "Toners", "Sunscreen", "Anti-Aging", "Acne Treatment"] },
-    { id: "makeup", name: "Makeup", subCategories: ["Foundation", "Concealer", "Lipstick", "Eyeshadow", "Mascara", "Eyeliner", "Blush", "Highlighter", "Bronzer"] },
-    { id: "haircare", name: "Hair Care", subCategories: ["Shampoo", "Conditioner", "Hair Masks", "Hair Oils", "Styling Products", "Hair Tools"] },
-    { id: "fragrance", name: "Fragrance", subCategories: ["Perfumes", "Body Mists", "Deodorants", "Body Sprays"] },
-    { id: "tools", name: "Beauty Tools", subCategories: ["Brushes", "Sponges", "Applicators", "Tweezers", "Mirrors", "Organizers"] },
-    { id: "bodycare", name: "Body Care", subCategories: ["Body Lotions", "Body Scrubs", "Body Wash", "Hand Cream", "Foot Care"] }
+    {
+      id: "skincare",
+      name: "Skincare",
+      subCategories: [
+        "Cleansers",
+        "Moisturizers",
+        "Serums",
+        "Masks",
+        "Toners",
+        "Sunscreen",
+        "Anti-Aging",
+        "Acne Treatment"
+      ]
+    },
+    {
+      id: "makeup",
+      name: "Makeup",
+      subCategories: [
+        "Foundation",
+        "Concealer",
+        "Lipstick",
+        "Eyeshadow",
+        "Mascara",
+        "Eyeliner",
+        "Blush",
+        "Highlighter",
+        "Bronzer"
+      ]
+    },
+    {
+      id: "haircare",
+      name: "Hair Care",
+      subCategories: [
+        "Shampoo",
+        "Conditioner",
+        "Hair Masks",
+        "Hair Oils",
+        "Styling Products",
+        "Hair Tools"
+      ]
+    },
+    {
+      id: "fragrance",
+      name: "Fragrance",
+      subCategories: [
+        "Perfumes",
+        "Body Mists",
+        "Deodorants",
+        "Body Sprays"
+      ]
+    },
+    {
+      id: "tools",
+      name: "Beauty Tools",
+      subCategories: [
+        "Brushes",
+        "Sponges",
+        "Applicators",
+        "Tweezers",
+        "Mirrors",
+        "Organizers"
+      ]
+    },
+    {
+      id: "bodycare",
+      name: "Body Care",
+      subCategories: [
+        "Body Lotions",
+        "Body Scrubs",
+        "Body Wash",
+        "Hand Cream",
+        "Foot Care"
+      ]
+    }
   ];
 
   const skinTypes = ["All Skin Types", "Dry", "Oily", "Combination", "Sensitive", "Normal", "Mature"];
@@ -209,6 +278,28 @@ const AddProduct = () => {
     } catch (error) {
       console.error("Error adding category:", error);
     }
+  };
+
+  const handleImageUpload = async (e, type, index = null) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setLoading(true);
+    try {
+      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      if (type === "main") {
+        setForm({ ...form, imageUrl: url });
+      } else if (type === "additional" && index !== null) {
+        const newAdditionalImages = [...form.additionalImages];
+        newAdditionalImages[index] = url;
+        setForm({ ...form, additionalImages: newAdditionalImages });
+      }
+      setSuccess("Image uploaded successfully!");
+    } catch (error) {
+      setError("Image upload failed. Please try again.");
+    }
+    setLoading(false);
   };
 
   const currentCategory = categories.find(cat => cat.id === form.category);
@@ -681,25 +772,27 @@ const AddProduct = () => {
                   {/* Main Image */}
                   <div className="mb-6">
                     <label className="block text-sm font-semibold text-gray-700 mb-3">
-                      Main Product Image URL
+                      Main Product Image
                       <span className="text-rose-500 ml-1">*</span>
                     </label>
-                    <div className="relative">
-                      <input 
-                        name="imageUrl" 
-                        placeholder="https://example.com/main-product-image.jpg" 
+                    <div className="flex gap-4 items-center">
+                      <input
+                        name="imageUrl"
+                        placeholder="https://example.com/main-product-image.jpg"
                         type="url"
                         value={form.imageUrl}
-                        onChange={handleChange} 
-                        className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-white placeholder-rose-400" 
-                        required 
+                        onChange={handleChange}
+                        className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-white placeholder-rose-400"
+                        required
                         disabled={loading}
                       />
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                        <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                      </div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, "main")}
+                        className="block w-32 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                        disabled={loading}
+                      />
                     </div>
                   </div>
 
@@ -708,18 +801,27 @@ const AddProduct = () => {
                     {form.additionalImages.map((img, index) => (
                       <div key={index}>
                         <label className="block text-sm font-semibold text-gray-700 mb-3">
-                          Additional Image {index + 1} URL
+                          Additional Image {index + 1}
                           <span className="text-xs text-gray-500 ml-1">(Optional)</span>
                         </label>
-                        <input 
-                          name={`additionalImage_${index}`}
-                          placeholder={`https://example.com/image-${index + 1}.jpg`}
-                          type="url"
-                          value={img}
-                          onChange={handleChange} 
-                          className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-white placeholder-rose-400" 
-                          disabled={loading}
-                        />
+                        <div className="flex gap-4 items-center">
+                          <input
+                            name={`additionalImage_${index}`}
+                            placeholder={`https://example.com/image-${index + 1}.jpg`}
+                            type="url"
+                            value={img}
+                            onChange={handleChange}
+                            className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-white placeholder-rose-400"
+                            disabled={loading}
+                          />
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleImageUpload(e, "additional", index)}
+                            className="block w-32 text-sm text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100"
+                            disabled={loading}
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
