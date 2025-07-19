@@ -1,4 +1,6 @@
 import React from "react";
+import heroImage from "../assets/nainzaka logo.jpg";
+import aboutLogo from "../assets/logo.jpg";
 
 const About = () => (
   <div className="min-h-screen bg-white">
@@ -38,7 +40,8 @@ const About = () => (
           </div>
           <div className="relative">
             <div className="aspect-square rounded-3xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-              <div className="text-8xl">✨</div>
+              {/* <div className="text-8xl">✨</div> */}
+              <img src={aboutLogo} alt="story image" />
             </div>
           </div>
         </div>
@@ -152,7 +155,8 @@ const About = () => (
 
           <div className="relative">
             <div className="aspect-square rounded-3xl bg-gradient-to-br from-pink-100 to-purple-100 flex items-center justify-center">
-              <div className="text-8xl">💄</div>
+              {/* <div className="text-8xl">💄</div> */}
+              <img src={heroImage} alt="logo" />
             </div>
           </div>
         </div>

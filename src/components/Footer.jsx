@@ -35,10 +35,13 @@ const Footer = () => (
           <h3 className="text-gray-800 font-semibold uppercase tracking-wider text-sm">Categories</h3>
           <div className="space-y-2">
             <ul>
-              <li>Skin Treatment</li>
-              <li>Laser Therapy</li>
-              <li>Injectables</li>
-              <li>Body Contouring</li>
+              <li>Cleansers</li>
+              <li>Moisturizers</li>
+              <li>Serums & Treatments</li>
+              <li>Sunscreens</li>
+              <li>Face Masks</li>
+              <li>Lip & Body Care</li>
+              
             </ul>
             {/* <a href="#" className="block text-gray-500 hover:text-pink-600 transition-colors text-sm">Skin Treatments</a>
             <a href="#" className="block text-gray-500 hover:text-pink-600 transition-colors text-sm">Laser Therapy</a>

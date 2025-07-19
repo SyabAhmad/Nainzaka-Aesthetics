@@ -5,7 +5,7 @@ import { collection, getDocs } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
 import heroImage from "../assets/nainzaka logo.jpg";
-
+import aboutLogo from "../assets/logo.jpg";
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [recentProducts, setRecentProducts] = useState([]);
@@ -214,7 +214,7 @@ const Home = () => {
             <div className="relative">
               <div className="aspect-square bg-gray-50 flex items-center justify-center">
                 {/* <div className="text-4xl">💄</div> */}
-                <img src="src\assets\logo.jpg" alt="logo" />
+                <img src={aboutLogo} alt="logo" />
               </div>
             </div>
           </div>
