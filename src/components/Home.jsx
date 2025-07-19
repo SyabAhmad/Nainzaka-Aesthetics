@@ -52,6 +52,7 @@ const Home = () => {
       <section className="relative bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            
             <div>
               <h1 className="text-4xl lg:text-5xl font-light text-gray-900 mb-6 leading-tight">
                 Beauty that
