@@ -1,207 +1,248 @@
+// filepath: h:\Code\Nainzaka Aesthetics\src\components\Home.jsx
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
+import { Link } from "react-router-dom";
+import ProductCard from "./ProductCard";
 
 const Home = () => {
-  const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [recentProducts, setRecentProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [priceRange, setPriceRange] = useState([0, 50000]);
-  const [sortBy, setSortBy] = useState("name");
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "products"));
-        const productsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setProducts(productsData);
-        setFilteredProducts(productsData);
+        const productsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        
+        // Featured products
+        const featured = productsData.filter(product => product.featured).slice(0, 8);
+        setFeaturedProducts(featured);
+        
+        // Recent products (last 3)
+        const recent = productsData
+          .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+          .slice(0, 3);
+        setRecentProducts(recent);
+        
       } catch (error) {
         console.error("Error fetching products:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchProducts();
   }, []);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "categories"));
-        const cats = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setCategories(cats);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  useEffect(() => {
-    let filtered = products;
-
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    // Filter by category (for now, we'll use a simple keyword match)
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(selectedCategory.toLowerCase()) ||
-        product.description.toLowerCase().includes(selectedCategory.toLowerCase())
-      );
-    }
-
-    // Filter by price range
-    filtered = filtered.filter(product =>
-      product.price >= priceRange[0] && product.price <= priceRange[1]
-    );
-
-    // Sort products
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case "price-low":
-          return a.price - b.price;
-        case "price-high":
-          return b.price - a.price;
-        case "name":
-          return a.name.localeCompare(b.name);
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProducts(filtered);
-  }, [products, searchTerm, selectedCategory, priceRange, sortBy]);
-
-  const handleWhatsAppOrder = (product) => {
-    const message = `Hi! I'm interested in ${product.name} (₨${product.price}). Can you please provide more details?`;
-    const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex justify-center items-center">
+      <div className="min-h-screen bg-white flex justify-center items-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-200 border-t-rose-500 mx-auto mb-4"></div>
-          <p className="text-lg text-rose-600 font-medium">Loading beautiful products...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-900 mx-auto mb-4"></div>
+          <p className="text-lg text-gray-700 font-medium">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      {/* HERO */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-white via-pink-100 to-purple-100 flex items-center justify-center min-h-[60vh]">
-        {/* Decorative Blobs */}
-        <div className="absolute -top-32 -left-32 w-[32rem] h-[32rem] bg-rose-100 rounded-full opacity-40 blur-3xl"></div>
-        <div className="absolute -bottom-40 -right-40 w-[36rem] h-[36rem] bg-purple-200 rounded-full opacity-30 blur-3xl"></div>
-        <div className="container mx-auto px-6 py-16 relative z-10 flex flex-col items-center">
-          <div className="flex flex-col items-center gap-6">
-            <div className="flex flex-col items-center">
-              <span className="inline-block px-6 py-2 rounded-full bg-white/80 text-pink-500 font-semibold text-lg mb-4 shadow">Glow With Confidence</span>
-              <h1 className="text-6xl md:text-7xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-rose-500 drop-shadow-xl text-center leading-tight">
-                Nainzaka<br className="hidden md:block" />
-                <span className="text-purple-500">Aesthetics</span>
+    <div className="min-h-screen bg-white">
+      {/* Hero Section */}
+      <section className="relative bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-light text-gray-900 mb-6 leading-tight">
+                Beauty that
+                <span className="block font-medium">Empowers You</span>
               </h1>
-              <p className="text-lg md:text-xl font-medium mb-6 text-gray-700 max-w-xl mx-auto text-center">
-                Discover beauty that empowers you.<br />
-                <span className="text-pink-500">Premium products</span> for your unique glow.
+              <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                Discover premium skincare, makeup, and beauty tools carefully curated to enhance your natural radiance.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  to="/products"
+                  className="bg-gray-900 hover:bg-gray-800 text-white px-8 py-3 font-medium transition-colors text-center"
+                >
+                  Shop Collection
+                </Link>
+                <a
+                  href="#about"
+                  className="border border-gray-300 hover:border-[#660033] text-[#660033] px-8 py-3 font-medium transition-colors text-center"
+                >
+                  Learn More
+                </a>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="aspect-square bg-gray-50 flex items-center justify-center">
+                {/* <div className="text-6xl">✨</div> */}
+                <img
+                  src="src/assets/nainzaka logo.jpg"
+                  alt="Hero Image"
+                  className="w-full h-full object-cover rounded-lg shadow-lg"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Latest Products - 3 in a Row */}
+      {recentProducts.length > 0 && (
+        <section className="py-16 bg-gray-50">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-light text-gray-900 mb-4">
+                Latest Arrivals
+              </h2>
+              <p className="text-gray-600">
+                New products just added to our collection
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row justify-center gap-4 mt-2">
-              <a
-                href="#products"
-                className="bg-gradient-to-r from-pink-500 to-purple-500 hover:from-purple-500 hover:to-pink-500 text-white px-10 py-4 rounded-2xl font-semibold shadow-xl text-lg transition-all duration-300"
-              >
-                Shop Now
-              </a>
-              <a
-                href="#contact"
-                className="bg-white border-2 border-pink-200 text-pink-600 px-10 py-4 rounded-2xl font-semibold shadow text-lg hover:bg-pink-50 transition-all duration-300"
-              >
-                Contact Us
-              </a>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {recentProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
             </div>
-            {/* Decorative underline */}
-            <div className="w-32 h-2 bg-gradient-to-r from-pink-400 via-purple-400 to-rose-400 rounded-full mt-8 mx-auto"></div>
+          </div>
+        </section>
+      )}
+
+      {/* Featured Products */}
+      {featuredProducts.length > 0 && (
+        <section className="py-16 bg-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-light text-gray-900 mb-4">
+                Featured Products
+              </h2>
+              <p className="text-gray-600">
+                Handpicked favorites loved by our customers
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link
+                to="/products"
+                className="inline-flex items-center text-gray-900 hover:text-gray-600 font-medium transition-colors"
+              >
+                View All Products
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Features */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Authentic Products</h3>
+              <p className="text-gray-600 text-sm">
+                100% authentic products sourced from authorized distributors
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Fast Delivery</h3>
+              <p className="text-gray-600 text-sm">
+                Quick delivery across Pakistan with cash on delivery
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                </svg>
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Expert Care</h3>
+              <p className="text-gray-600 text-sm">
+                Beauty advice and product recommendations from experts
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* FEATURED/DELIVERY/FAQS */}
-      <section className="container mx-auto px-6 py-14">
-        <div className="grid md:grid-cols-3 gap-8 mb-12">
-          <div className="bg-white/90 rounded-2xl shadow-xl p-8 text-center hover:scale-105 transition-transform duration-300">
-            <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-400 text-white text-3xl shadow-lg">⭐</div>
-            <h3 className="font-bold text-xl mb-2 text-pink-600">Featured Products</h3>
-            <p className="text-gray-600">Handpicked bestsellers and new arrivals for your beauty routine.</p>
-          </div>
-          <div className="bg-white/90 rounded-2xl shadow-xl p-8 text-center hover:scale-105 transition-transform duration-300">
-            <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full bg-gradient-to-r from-green-400 to-green-600 text-white text-3xl shadow-lg">🚚</div>
-            <h3 className="font-bold text-xl mb-2 text-green-600">Fast Delivery</h3>
-            <p className="text-gray-600">All over Pakistan, 2-4 days delivery. Cash on Delivery available.</p>
-          </div>
-          <div className="bg-white/90 rounded-2xl shadow-xl p-8 text-center hover:scale-105 transition-transform duration-300">
-            <div className="w-14 h-14 mx-auto mb-4 flex items-center justify-center rounded-full bg-gradient-to-r from-purple-400 to-pink-400 text-white text-3xl shadow-lg">❓</div>
-            <h3 className="font-bold text-xl mb-2 text-purple-600">FAQs</h3>
-            <p className="text-gray-600">Check our <a href="#faqs" className="text-pink-500 underline">FAQs</a> for info on orders, returns, and more.</p>
+      {/* About Section */}
+      <section id="about" className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <h2 className="text-3xl font-light text-gray-900 mb-6">
+                About Nainzaka Aesthetics
+              </h2>
+              <p className="text-gray-600 mb-6">
+                We believe beauty is about feeling confident in your own skin. Our curated collection features premium beauty products for diverse needs.
+              </p>
+              <p className="text-gray-600 mb-8">
+                From skincare essentials to makeup must-haves, each product is selected for quality, authenticity, and effectiveness.
+              </p>
+              <Link
+                to="/about"
+                className="inline-flex items-center text-gray-900 hover:text-gray-600 font-medium transition-colors"
+              >
+                Learn More About Us
+                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </Link>
+            </div>
+            <div className="relative">
+              <div className="aspect-square bg-gray-50 flex items-center justify-center">
+                <div className="text-4xl">💄</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* PRODUCTS HERO */}
-      <section className="bg-gradient-to-r from-pink-100 via-white to-purple-100 py-16 shadow-inner" id="products">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-rose-500 drop-shadow-lg">
-            Explore Our Products
+      {/* CTA Section */}
+      <section className="py-16 bg-gray-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-light text-white mb-6">
+            Ready to Glow?
           </h2>
-          <p className="text-lg md:text-xl text-gray-700 mb-6 max-w-2xl mx-auto">
-            Shop the latest in beauty, skincare, and more. All products are 100% original and delivered to your doorstep!
+          <p className="text-gray-300 mb-8">
+            Start your beauty journey with us today
           </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/products"
+              className="bg-[#660033] hover:bg-[#4A0025] text-white px-8 py-3 font-medium transition-colors text-center"
+            >
+              Shop Now
+            </Link>
+            <a
+              href="https://wa.me/923001234567"
+              className="border border-white hover:bg-white hover:text-gray-900 text-white px-8 py-3 font-medium transition-colors"
+            >
+              Contact Us
+            </a>
+          </div>
         </div>
       </section>
-      {/* FAQ Section */}
-      <div className="container mx-auto px-6 py-12" id="faqs">
-        <h2 className="text-3xl font-bold text-center mb-8 text-pink-600">Frequently Asked Questions</h2>
-        <div className="max-w-3xl mx-auto space-y-6">
-          <div className="bg-white/90 rounded-xl shadow p-6">
-            <h4 className="font-semibold text-lg mb-2 text-pink-600">How do I place an order?</h4>
-            <p className="text-gray-700">Click "View & Order" on any product to see details and order via WhatsApp.</p>
-          </div>
-          <div className="bg-white/90 rounded-xl shadow p-6">
-            <h4 className="font-semibold text-lg mb-2 text-pink-600">What payment methods do you accept?</h4>
-            <p className="text-gray-700">We offer Cash on Delivery for all orders across Pakistan.</p>
-          </div>
-          <div className="bg-white/90 rounded-xl shadow p-6">
-            <h4 className="font-semibold text-lg mb-2 text-pink-600">How long does delivery take?</h4>
-            <p className="text-gray-700">Delivery usually takes 2-4 working days after order confirmation.</p>
-          </div>
-          <div className="bg-white/90 rounded-xl shadow p-6">
-            <h4 className="font-semibold text-lg mb-2 text-pink-600">Are your products original?</h4>
-            <p className="text-gray-700">Yes, all our products are 100% original and sourced from trusted suppliers.</p>
-          </div>
-        </div>
-      </div>
-      
     </div>
   );
 };

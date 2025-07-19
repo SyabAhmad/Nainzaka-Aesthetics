@@ -1,56 +1,59 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import { auth } from "../firebase";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const AdminLogin = () => {
-  const navigate = useNavigate();
-  const [credentials, setCredentials] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { currentUser } = useAuth();
 
-  const handleChange = (e) => {
-    setCredentials({ ...credentials, [e.target.name]: e.target.value });
-    if (error) setError("");
-  };
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (currentUser) {
+      const from = location.state?.from?.pathname || "/admin/dashboard";
+      navigate(from, { replace: true });
+    }
+  }, [currentUser, navigate, location]);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
-    
+    setLoading(true);
+
     try {
-      const userCredential = await signInWithEmailAndPassword(
-        auth, 
-        credentials.email, 
-        credentials.password
-      );
+      // Just sign in - if they can sign in, they're admin
+      await signInWithEmailAndPassword(auth, email, password);
       
-      localStorage.setItem("isAdmin", "true");
-      localStorage.setItem("adminEmail", userCredential.user.email);
+      // Navigate to dashboard
+      const from = location.state?.from?.pathname || "/admin/dashboard";
+      navigate(from, { replace: true });
       
-      navigate("/admin/dashboard");
     } catch (error) {
       console.error("Login error:", error);
-      
       switch (error.code) {
         case 'auth/user-not-found':
-          setError("No admin account found with this email.");
+          setError("No account found with this email address.");
           break;
         case 'auth/wrong-password':
-          setError("Incorrect password.");
+          setError("Incorrect password. Please try again.");
           break;
         case 'auth/invalid-email':
-          setError("Invalid email address.");
-          break;
-        case 'auth/user-disabled':
-          setError("This account has been disabled.");
+          setError("Invalid email address format.");
           break;
         case 'auth/too-many-requests':
           setError("Too many failed attempts. Please try again later.");
           break;
+        case 'auth/invalid-credential':
+          setError("Invalid credentials. Please check your email and password.");
+          break;
         default:
-          setError("Login failed. Please check your credentials.");
+          setError("Login failed. Please check your credentials and try again.");
       }
     } finally {
       setLoading(false);
@@ -58,130 +61,97 @@ const AdminLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 bg-gradient-to-r from-rose-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="flex justify-center">
+          <div className="w-16 h-16 bg-gradient-to-r from-[#660033] to-[#AD1457] rounded-xl flex items-center justify-center">
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
             </svg>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
-            Admin Login
-          </h1>
-          <p className="text-rose-600 font-medium">Nainzaka Aesthetics Admin Panel</p>
-          <div className="w-16 h-1 bg-gradient-to-r from-rose-400 to-pink-400 mx-auto mt-3 rounded-full"></div>
         </div>
-        
-        {/* Login Form */}
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
-          <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 p-6">
-            <div className="text-center">
-              <h2 className="text-xl font-bold text-white mb-1">Welcome Back</h2>
-              <p className="text-rose-100 text-sm">Access your admin dashboard</p>
+        <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          Admin Login
+        </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Sign in to access the admin dashboard
+        </p>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow-lg sm:rounded-lg sm:px-10 border border-gray-200">
+          <form onSubmit={handleLogin} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-4">
+                <div className="flex">
+                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  </svg>
+                  <div className="ml-3">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#660033] focus:border-transparent transition-colors"
+                placeholder="syab@nainzaka.com"
+              />
             </div>
-          </div>
-          
-          <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-3">
-                  Email Address
-                  <span className="text-rose-500 ml-1">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    required
-                    value={credentials.email}
-                    onChange={handleChange}
-                    className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-rose-50/50 placeholder-rose-400"
-                    placeholder="Enter your admin email"
-                    disabled={loading}
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                    </svg>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-3">
-                  Password
-                  <span className="text-rose-500 ml-1">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    required
-                    value={credentials.password}
-                    onChange={handleChange}
-                    className="w-full p-4 border-2 border-rose-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-rose-200 focus:border-rose-400 transition-all duration-300 bg-rose-50/50 placeholder-rose-400"
-                    placeholder="Enter your password"
-                    disabled={loading}
-                  />
-                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                    <svg className="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                  </div>
-                </div>
-              </div>
 
-              {error && (
-                <div className="bg-red-50 border-l-4 border-red-400 p-4 rounded-r-lg">
-                  <div className="flex">
-                    <div className="flex-shrink-0">
-                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                    <div className="ml-3">
-                      <p className="text-sm text-red-800">{error}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#660033] focus:border-transparent transition-colors"
+                placeholder="Enter your password"
+              />
+            </div>
 
+            <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 disabled:hover:scale-100 shadow-lg hover:shadow-xl"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#660033] hover:bg-[#4A0025] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#660033] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
                     Signing in...
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center">
-                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"></path>
-                    </svg>
-                    Sign In
-                  </div>
+                  "Sign in"
                 )}
               </button>
-              
-              <div className="text-center text-sm text-gray-500">
-                <p>Use your Firebase Authentication credentials</p>
-              </div>
-            </form>
-          </div>
-        </div>
+            </div>
+          </form>
 
-        {/* Brand Footer */}
-        <div className="text-center mt-8">
-          <p className="text-rose-600 font-medium">✨ Glow with confidence ✨</p>
-          <p className="text-rose-400 text-sm mt-2">Nainzaka Aesthetics</p>
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => navigate('/')}
+              className="text-sm text-[#660033] hover:text-[#4A0025] font-medium transition-colors"
+            >
+              ← Back to Homepage
+            </button>
+          </div>
         </div>
       </div>
     </div>

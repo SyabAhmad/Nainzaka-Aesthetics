@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { db, auth } from "../firebase";
+import { db } from "../firebase";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
-import { signOut } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
-import { FaArrowLeft } from "react-icons/fa";
+import { useAuth } from "../context/AuthContext";
+import { FaArrowLeft, FaSearch, FaFilter, FaSort, FaEye, FaMousePointer, FaEdit, FaTrash } from "react-icons/fa";
 import { Bar } from "react-chartjs-2";
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
 
@@ -11,25 +11,18 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
+  const { currentUser, logout } = useAuth(); // Use AuthContext instead of localStorage
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [adminEmail, setAdminEmail] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("table"); // "table" or "charts"
-  const [sortBy, setSortBy] = useState("views-high"); // Sorting option
+  const [activeTab, setActiveTab] = useState("table");
+  const [sortBy, setSortBy] = useState("views-high");
+  const [productLimit, setProductLimit] = useState(10);
 
+  // Remove the problematic useEffect that was causing the infinite loop
   useEffect(() => {
-    const isAdmin = localStorage.getItem("isAdmin");
-    const email = localStorage.getItem("adminEmail");
-
-    if (!isAdmin) {
-      navigate("/admin/login");
-      return;
-    }
-
-    setAdminEmail(email || "Admin");
     fetchProducts();
-  }, [navigate]);
+  }, []); // Only run once on mount
 
   const fetchProducts = async () => {
     try {
@@ -59,14 +52,10 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
-      localStorage.removeItem("isAdmin");
-      localStorage.removeItem("adminEmail");
+      await logout(); // Use AuthContext logout
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
-      localStorage.removeItem("isAdmin");
-      localStorage.removeItem("adminEmail");
       navigate("/");
     }
   };
@@ -79,232 +68,432 @@ const AdminDashboard = () => {
     .sort((a, b) => {
       switch (sortBy) {
         case "views-high":
-          return b.views - a.views;
+          return (b.views || 0) - (a.views || 0);
         case "views-low":
-          return a.views - b.views;
+          return (a.views || 0) - (b.views || 0);
         case "clicks-high":
-          return b.clicks - a.clicks;
+          return (b.clicks || 0) - (a.clicks || 0);
         case "clicks-low":
-          return a.clicks - b.clicks;
+          return (a.clicks || 0) - (b.clicks || 0);
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "price-high":
+          return (b.price || 0) - (a.price || 0);
+        case "price-low":
+          return (a.price || 0) - (b.price || 0);
         default:
           return 0;
       }
     });
 
+  const topProducts = filteredProducts.slice(0, productLimit);
+
   const chartData = {
-    labels: filteredProducts.map(product => product.name),
+    labels: topProducts.map(product => product.name.length > 15 ? product.name.substring(0, 15) + '...' : product.name),
     datasets: [
       {
         label: "Views",
-        data: filteredProducts.map(product => product.views || 0),
-        backgroundColor: "rgba(255, 99, 132, 0.5)",
+        data: topProducts.map(product => product.views || 0),
+        backgroundColor: "rgba(102, 0, 51, 0.6)",
+        borderColor: "rgba(102, 0, 51, 1)",
+        borderWidth: 1,
       },
       {
         label: "Clicks",
-        data: filteredProducts.map(product => product.clicks || 0),
-        backgroundColor: "rgba(54, 162, 235, 0.5)",
+        data: topProducts.map(product => product.clicks || 0),
+        backgroundColor: "rgba(168, 85, 247, 0.6)",
+        borderColor: "rgba(168, 85, 247, 1)",
+        borderWidth: 1,
       },
     ],
   };
 
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top",
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+          font: {
+            size: 12,
+            weight: 'bold'
+          }
+        }
+      },
+      title: {
+        display: true,
+        text: `Top ${productLimit} Products Analytics`,
+        font: {
+          size: 16,
+          weight: 'bold'
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(0, 0, 0, 0.1)',
+        },
+        ticks: {
+          font: {
+            size: 11
+          }
+        }
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 11
+          },
+          maxRotation: 45
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex justify-center items-center">
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-rose-200 border-t-rose-500 mx-auto mb-4"></div>
-          <p className="text-lg text-rose-600 font-medium">Loading dashboard...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-[#660033] mx-auto mb-4"></div>
+          <p className="text-lg text-gray-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
-      {/* Header Section */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-rose-200">
-        <div className="container mx-auto px-6 py-8">
-          <div className="flex justify-between items-center">
-            <div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center">
               <button
                 onClick={() => navigate("/")}
-                className="inline-flex items-center bg-gradient-to-r from-pink-400 to-purple-400 text-white px-4 py-2 rounded-xl font-semibold shadow hover:scale-105 transition-all duration-300 mb-4"
+                className="flex items-center text-gray-600 hover:text-[#660033] transition-colors mr-6"
               >
-                <FaArrowLeft className="mr-2" />
-                Back to Home
+                <FaArrowLeft className="w-4 h-4 mr-2" />
+                Back to Store
               </button>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                Admin Dashboard
-              </h1>
-              <p className="text-rose-600 font-medium">Welcome back, {adminEmail}</p>
-              <div className="w-24 h-1 bg-gradient-to-r from-rose-400 to-pink-400 mt-3 rounded-full"></div>
+              <h1 className="text-xl font-semibold text-gray-900">Admin Dashboard</h1>
             </div>
-            <div className="flex gap-4">
+            <div className="flex items-center space-x-4">
+              <span className="text-sm text-gray-600">Welcome, {currentUser?.email || 'Admin'}</span>
               <Link
-                to="/admin/add"
-                className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+                to="/admin/add-product"
+                className="bg-[#660033] hover:bg-[#4A0025] text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                <span>Add Product</span>
+                Add Product
               </Link>
               <button
                 onClick={handleLogout}
-                className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2"
+                className="text-gray-600 hover:text-gray-900 text-sm font-medium transition-colors"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                </svg>
-                <span>Logout</span>
+                Logout
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Tabs */}
-      <div className="container mx-auto px-6 py-4">
-        <div className="flex gap-4">
-          <button
-            onClick={() => setActiveTab("table")}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === "table" ? "bg-pink-500 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            Table View
-          </button>
-          <button
-            onClick={() => setActiveTab("charts")}
-            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-              activeTab === "charts" ? "bg-pink-500 text-white" : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            Charts View
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-6 py-12">
-        {activeTab === "table" ? (
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
-            {/* Table View */}
-            <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 px-8 py-6">
-              <h2 className="text-2xl font-bold text-white flex items-center">
-                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-[#660033]/10 rounded-lg">
+                <svg className="w-6 h-6 text-[#660033]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                 </svg>
-                Products Collection ({filteredProducts.length})
-              </h2>
-              <p className="text-rose-100 mt-1">Manage your beautiful product collection</p>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="min-w-full">
-                <thead className="bg-gradient-to-r from-rose-50 to-pink-50">
-                  <tr>
-                    <th className="px-8 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                      Product
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                      Description
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                      Price
-                    </th>
-                    <th className="px-8 py-4 text-left text-sm font-bold text-gray-700 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-rose-100">
-                  {filteredProducts.map((product) => (
-                    <tr key={product.id} className="hover:bg-rose-50/50 transition-colors">
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <img
-                            src={product.imageUrl}
-                            alt={product.name}
-                            className="h-16 w-16 rounded-2xl object-cover mr-6 border-2 border-rose-200"
-                            onError={(e) => {
-                              e.target.src = "https://via.placeholder.com/64x64/F3F4F6/9CA3AF?text=No+Image";
-                            }}
-                          />
-                          <div>
-                            <div className="text-lg font-bold text-gray-900">{product.name}</div>
-                            <div className="text-sm text-gray-500">
-                              Views: {product.views || 0} | Clicks: {product.clicks || 0}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-8 py-6">
-                        <div className="text-sm text-gray-700 max-w-xs truncate">{product.description}</div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap">
-                        <div className="text-lg font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
-                          ₨{product.price}
-                        </div>
-                      </td>
-                      <td className="px-8 py-6 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-3">
-                          <Link
-                            to={`/admin/edit/${product.id}`}
-                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                              ></path>
-                            </svg>
-                            <span>Edit</span>
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(product.id)}
-                            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              ></path>
-                            </svg>
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Products</p>
+                <p className="text-2xl font-semibold text-gray-900">{products.length}</p>
+              </div>
             </div>
           </div>
-        ) : (
-          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
-            {/* Charts View */}
-            <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 px-8 py-6">
-              <h2 className="text-2xl font-bold text-white flex items-center">
-                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                  ></path>
+          
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <FaEye className="w-6 h-6 text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Views</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {products.reduce((sum, product) => sum + (product.views || 0), 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FaMousePointer className="w-6 h-6 text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Total Clicks</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {products.reduce((sum, product) => sum + (product.clicks || 0), 0).toLocaleString()}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 00-2-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h2a2 2 0 00-2-2z"></path>
                 </svg>
-                Product Analytics
-              </h2>
-              <p className="text-rose-100 mt-1">Visualize product views and clicks</p>
-            </div>
-            <div className="p-8">
-              <Bar data={chartData} options={{ responsive: true, plugins: { legend: { position: "top" } } }} />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-600">Avg. Views</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {products.length ? Math.round(products.reduce((sum, product) => sum + (product.views || 0), 0) / products.length) : 0}
+                </p>
+              </div>
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Tabs */}
+        <div className="bg-white rounded-lg border border-gray-200 mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
+              <button
+                onClick={() => setActiveTab("table")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "table"
+                    ? "border-[#660033] text-[#660033]"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Products Table
+              </button>
+              <button
+                onClick={() => setActiveTab("charts")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "charts"
+                    ? "border-[#660033] text-[#660033]"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                Analytics Chart
+              </button>
+            </nav>
+          </div>
+
+          {/* Content */}
+          <div className="p-6">
+            {activeTab === "table" ? (
+              <div>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                  <div className="relative flex-1">
+                    <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      placeholder="Search products..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#660033] focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex gap-3">
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#660033] focus:border-transparent"
+                    >
+                      <option value="views-high">Views (High to Low)</option>
+                      <option value="views-low">Views (Low to High)</option>
+                      <option value="clicks-high">Clicks (High to Low)</option>
+                      <option value="clicks-low">Clicks (Low to High)</option>
+                      <option value="name">Name (A-Z)</option>
+                      <option value="price-high">Price (High to Low)</option>
+                      <option value="price-low">Price (Low to High)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Products Table */}
+                <div className="overflow-hidden border border-gray-200 rounded-lg">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Product
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Price
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Analytics
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {filteredProducts.map((product) => (
+                          <tr key={product.id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center">
+                                <div className="flex-shrink-0 h-16 w-16">
+                                  <img
+                                    className="h-16 w-16 rounded-lg object-cover border border-gray-200"
+                                    src={product.imageUrl}
+                                    alt={product.name}
+                                    onError={(e) => {
+                                      e.target.src = "https://via.placeholder.com/64x64/F3F4F6/9CA3AF?text=No+Image";
+                                    }}
+                                  />
+                                </div>
+                                <div className="ml-4">
+                                  <div className="text-sm font-medium text-gray-900 max-w-xs">
+                                    {product.name}
+                                  </div>
+                                  <div className="text-sm text-gray-500 max-w-xs truncate">
+                                    {product.description}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">
+                                ₨{product.price?.toLocaleString()}
+                              </div>
+                              {product.salePrice && (
+                                <div className="text-xs text-red-600">
+                                  Sale: ₨{product.salePrice?.toLocaleString()}
+                                </div>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="flex items-center space-x-4">
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <FaEye className="w-3 h-3 mr-1" />
+                                  {product.views || 0}
+                                </div>
+                                <div className="flex items-center text-sm text-gray-600">
+                                  <FaMousePointer className="w-3 h-3 mr-1" />
+                                  {product.clicks || 0}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                product.inStock 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-red-100 text-red-800'
+                              }`}>
+                                {product.inStock ? 'In Stock' : 'Out of Stock'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <div className="flex justify-end space-x-2">
+                                <Link
+                                  to={`/admin/edit-product/${product.id}`}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                                  title="Edit Product"
+                                >
+                                  <FaEdit className="w-4 h-4" />
+                                </Link>
+                                <button
+                                  onClick={() => handleDelete(product.id)}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded"
+                                  title="Delete Product"
+                                >
+                                  <FaTrash className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {filteredProducts.length === 0 && (
+                  <div className="text-center py-12">
+                    <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2M4 13h2m13-8v2a1 1 0 01-1 1H7a1 1 0 01-1-1V5a1 1 0 011-1h10a1 1 0 011 1zM8 13h.01M16 13h.01" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+                    <p className="mt-1 text-sm text-gray-500">Try adjusting your search terms.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div>
+                {/* Chart Controls */}
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-lg font-medium text-gray-900">Product Performance Analytics</h3>
+                  <div className="flex items-center space-x-4">
+                    <label className="text-sm font-medium text-gray-700">Show Top:</label>
+                    <select
+                      value={productLimit}
+                      onChange={(e) => setProductLimit(Number(e.target.value))}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-[#660033] focus:border-transparent"
+                    >
+                      <option value={5}>5 Products</option>
+                      <option value={10}>10 Products</option>
+                      <option value={15}>15 Products</option>
+                      <option value={20}>20 Products</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Chart */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6" style={{ height: '500px' }}>
+                  <Bar data={chartData} options={chartOptions} />
+                </div>
+
+                {/* Chart Legend */}
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-[#660033]/10 border border-[#660033]/20 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-[#660033] rounded mr-3"></div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Total Views</h4>
+                        <p className="text-2xl font-bold text-[#660033]">
+                          {topProducts.reduce((sum, product) => sum + (product.views || 0), 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <div className="w-4 h-4 bg-purple-500 rounded mr-3"></div>
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900">Total Clicks</h4>
+                        <p className="text-2xl font-bold text-purple-600">
+                          {topProducts.reduce((sum, product) => sum + (product.clicks || 0), 0).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

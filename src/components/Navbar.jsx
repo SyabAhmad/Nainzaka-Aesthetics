@@ -1,119 +1,176 @@
-// src/components/Navbar.jsx
 import React, { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const { currentUser, isAdmin, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
 
   return (
-    <nav className="bg-white/95 backdrop-blur-sm shadow-lg border-b border-rose-100 sticky top-0 z-50">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center py-4">
-          
-          {/* Logo and Brand */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-10 h-10 bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 rounded-full flex items-center justify-center transform group-hover:scale-105 transition-transform duration-300">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <nav className="bg-white shadow-lg sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-gradient-to-r from-[#660033] to-[#AD1457] rounded-lg flex items-center justify-center">
+              <img src="src\assets\logo.jpg" alt="logo" />
+              {/* <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-              </svg>
+              </svg> */}
             </div>
             <div>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-rose-600 via-pink-600 to-purple-600 bg-clip-text text-transparent">
-                Nainzaka Aesthetics
-              </h1>
-              <p className="text-xs text-rose-500 font-medium -mt-1">Glow with confidence</p>
+              <span className="text-xl font-bold text-gray-800">Nainzaka Aesthetics</span>
+              <span className="block text-xs text-pink-500 font-medium tracking-wider">GLOW WITH CONFIDENCE</span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Menu */}
           <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/" 
-              className="text-gray-700 hover:text-rose-600 font-medium transition-colors duration-300 relative group"
-            >
+            <Link to="/" className="text-gray-700 hover:text-[#660033] transition-colors font-medium">
               Home
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-300 group-hover:w-full"></span>
             </Link>
-
-            <Link 
-              to="/products" 
-              className="text-gray-700 hover:text-rose-600 font-medium transition-colors duration-300 relative group"
-            >
+            <Link to="/products" className="text-gray-700 hover:text-[#660033] transition-colors font-medium">
               Products
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-300 group-hover:w-full"></span>
+            </Link>
+            <Link to="/about" className="text-gray-700 hover:text-[#660033] transition-colors font-medium">
+              About
             </Link>
             
-            <Link 
-              to="/about" 
-              className="text-gray-700 hover:text-rose-600 font-medium transition-colors duration-300 relative group"
-            >
-              About Us
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-gradient-to-r from-rose-400 to-pink-400 transition-all duration-300 group-hover:w-full"></span>
-            </Link>
+            {/* Admin Menu */}
+            {currentUser && isAdmin && (
+              <div className="relative group">
+                <button className="text-gray-700 hover:text-[#660033] transition-colors font-medium flex items-center">
+                  Admin
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                  </svg>
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <Link
+                    to="/admin/dashboard"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link
+                    to="/admin/add-product"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Add Product
+                  </Link>
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  >
+                    Logout
+                  </button>
+                </div>
+              </div>
+            )}
             
-
-            {/* Admin Link */}
-            <Link 
-              to="/admin/login" 
-              className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 hover:from-rose-600 hover:via-pink-600 hover:to-purple-600 text-white px-6 py-2 rounded-full font-medium transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-            >
-              Admin
-            </Link>
+            {/* Login Link for non-admin users */}
+            {!currentUser && (
+              <Link 
+                to="/admin/login" 
+                className="text-gray-700 hover:text-[#660033] transition-colors font-medium"
+              >
+                Admin Login
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 transition-colors duration-300"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsOpen(!isOpen)}
+              className="text-gray-700 hover:text-gray-900 focus:outline-none focus:text-gray-900"
+            >
+              <svg className="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                {isOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
-        {isMenuOpen && (
-          <div className="md:hidden bg-white/95 backdrop-blur-sm border-t border-rose-100 py-4">
-            <div className="flex flex-col space-y-4">
-              <Link 
-                to="/" 
-                onClick={() => setIsMenuOpen(false)}
-                className="text-gray-700 hover:text-rose-600 font-medium px-4 py-2 rounded-lg hover:bg-rose-50 transition-all duration-300"
+        {isOpen && (
+          <div className="md:hidden">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+              <Link
+                to="/"
+                className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
               >
                 Home
               </Link>
-              
-              <Link 
-                to="/products" 
-                onClick={() => setIsMenuOpen(false)}
-                className="text-gray-700 hover:text-rose-600 font-medium px-4 py-2 rounded-lg hover:bg-rose-50 transition-all duration-300"
+              <Link
+                to="/products"
+                className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
               >
                 Products
               </Link>
-              
-              <Link 
-                to="/about" 
-                onClick={() => setIsMenuOpen(false)}
-                className="text-gray-700 hover:text-rose-600 font-medium px-4 py-2 rounded-lg hover:bg-rose-50 transition-all duration-300"
+              <Link
+                to="/about"
+                className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                onClick={() => setIsOpen(false)}
               >
-                About Us
+                About
               </Link>
               
-
-              <Link 
-                to="/admin/login" 
-                onClick={() => setIsMenuOpen(false)}
-                className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 text-white px-4 py-2 rounded-lg font-medium mx-4 text-center transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                Admin Panel
-              </Link>
+              {currentUser && isAdmin && (
+                <>
+                  <div className="border-t border-gray-200 pt-2">
+                    <Link
+                      to="/admin/dashboard"
+                      className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Admin Dashboard
+                    </Link>
+                    <Link
+                      to="/admin/add-product"
+                      className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      Add Product
+                    </Link>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setIsOpen(false);
+                      }}
+                      className="block w-full text-left px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                    >
+                      Logout
+                    </button>
+                  </div>
+                </>
+              )}
+              
+              {!currentUser && (
+                <Link
+                  to="/admin/login"
+                  className="block px-3 py-2 text-gray-700 hover:text-[#660033] transition-colors font-medium"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin Login
+                </Link>
+              )}
             </div>
           </div>
         )}

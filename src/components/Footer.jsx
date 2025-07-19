@@ -7,10 +7,11 @@ const Footer = () => (
                 {/* Brand Column */}
                 <div className="space-y-4">
                     <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-pink-500 to-pink-600 rounded-lg flex items-center justify-center">
-                            <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 bg-gradient-to-r from-[#660033] to-[#AD1457] rounded-lg flex items-center justify-center">
+                            <img src="src\assets\logo.jpg" alt="logo" />
+                            {/* <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-                            </svg>
+                            </svg> */}
                         </div>
                         <div>
                             <span className="block text-xl font-bold text-gray-800">Nainzaka Aesthetics</span>
@@ -26,8 +27,8 @@ const Footer = () => (
                 <div className="space-y-4">
                     <h3 className="text-gray-800 font-semibold uppercase tracking-wider text-sm">Quick Links</h3>
                     <div className="space-y-2">
-                        <a href="/" className="block text-gray-500 hover:text-pink-600 transition-colors text-sm">Home</a>
-                        <a href="/about" className="block text-gray-500 hover:text-pink-600 transition-colors text-sm">About Us</a>
+                        <a href="/" className="block text-gray-500 hover:text-[#660033] transition-colors text-sm">Home</a>
+                        <a href="/about" className="block text-gray-500 hover:text-[#660033] transition-colors text-sm">About Us</a>
                     </div>
                 </div>
 
