@@ -211,7 +211,8 @@ const Home = () => {
             </div>
             <div className="relative">
               <div className="aspect-square bg-gray-50 flex items-center justify-center">
-                <div className="text-4xl">💄</div>
+                {/* <div className="text-4xl">💄</div> */}
+                <img src="src\assets\logo.jpg" alt="logo" />
               </div>
             </div>
           </div>
