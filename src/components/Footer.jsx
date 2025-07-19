@@ -72,7 +72,7 @@ const Footer = () => (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
-              <span className="text-gray-500 text-sm">123 Beauty St, Karachi</span>
+              <span className="text-gray-500 text-sm">Swat, Pakistan</span>
             </div>
           </div>
           
@@ -100,7 +100,7 @@ const Footer = () => (
       {/* Bottom Bar */}
       <div className="border-t border-gray-100 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
         <p className="text-gray-500 text-xs md:text-sm">
-          © {new Date().getFullYear()} Nainzaka Aesthetics. All rights reserved.
+          © {new Date().getFullYear()} Nainzaka Aesthetics. All rights reserved. <br /> Developed by <a href="https://syab.tech">Syed Syab Ahmad</a>
         </p>
         <div className="flex space-x-6 mt-4 md:mt-0">
           <a href="/privacy" className="text-gray-500 hover:text-pink-600 text-xs md:text-sm">Privacy Policy</a>
