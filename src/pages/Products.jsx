@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, doc, updateDoc, increment } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
 const Products = () => {
@@ -90,8 +90,17 @@ const Products = () => {
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory, priceRange, sortBy, categories]);
 
-  const handleViewProduct = (productId) => {
-    navigate(`/product/${productId}`);
+  const handleViewProduct = async (productId) => {
+    try {
+      const productRef = doc(db, "products", productId);
+      await updateDoc(productRef, {
+        views: increment(1), // Increment views by 1
+        clicks: increment(1), // Increment views by 1
+      });
+      navigate(`/product/${productId}`);
+    } catch (error) {
+      console.error("Error updating product views:", error);
+    }
   };
 
   if (loading) {

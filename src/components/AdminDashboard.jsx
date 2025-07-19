@@ -4,6 +4,10 @@ import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
+import { Bar } from "react-chartjs-2";
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from "chart.js";
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -11,11 +15,13 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [adminEmail, setAdminEmail] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("table"); // "table" or "charts"
+  const [sortBy, setSortBy] = useState("views-high"); // Sorting option
 
   useEffect(() => {
     const isAdmin = localStorage.getItem("isAdmin");
     const email = localStorage.getItem("adminEmail");
-    
+
     if (!isAdmin) {
       navigate("/admin/login");
       return;
@@ -65,11 +71,41 @@ const AdminDashboard = () => {
     }
   };
 
-  // Filter products by search term
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredProducts = products
+    .filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "views-high":
+          return b.views - a.views;
+        case "views-low":
+          return a.views - b.views;
+        case "clicks-high":
+          return b.clicks - a.clicks;
+        case "clicks-low":
+          return a.clicks - b.clicks;
+        default:
+          return 0;
+      }
+    });
+
+  const chartData = {
+    labels: filteredProducts.map(product => product.name),
+    datasets: [
+      {
+        label: "Views",
+        data: filteredProducts.map(product => product.views || 0),
+        backgroundColor: "rgba(255, 99, 132, 0.5)",
+      },
+      {
+        label: "Clicks",
+        data: filteredProducts.map(product => product.clicks || 0),
+        backgroundColor: "rgba(54, 162, 235, 0.5)",
+      },
+    ],
+  };
 
   if (loading) {
     return (
@@ -103,7 +139,7 @@ const AdminDashboard = () => {
               <div className="w-24 h-1 bg-gradient-to-r from-rose-400 to-pink-400 mt-3 rounded-full"></div>
             </div>
             <div className="flex gap-4">
-              <Link 
+              <Link
                 to="/admin/add"
                 className="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
               >
@@ -112,7 +148,7 @@ const AdminDashboard = () => {
                 </svg>
                 <span>Add Product</span>
               </Link>
-              <button 
+              <button
                 onClick={handleLogout}
                 className="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2"
               >
@@ -126,52 +162,42 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
+      {/* Tabs */}
       <div className="container mx-auto px-6 py-4">
-        <div className="max-w-lg mx-auto">
-          <input
-            type="text"
-            placeholder="Search products by name or description..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            className="w-full p-4 rounded-xl border-2 border-pink-200 focus:outline-none focus:ring-4 focus:ring-pink-100 text-lg shadow"
-          />
+        <div className="flex gap-4">
+          <button
+            onClick={() => setActiveTab("table")}
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              activeTab === "table" ? "bg-pink-500 text-white" : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            Table View
+          </button>
+          <button
+            onClick={() => setActiveTab("charts")}
+            className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+              activeTab === "charts" ? "bg-pink-500 text-white" : "bg-gray-200 text-gray-700"
+            }`}
+          >
+            Charts View
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
       <div className="container mx-auto px-6 py-12">
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
-          <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 px-8 py-6">
-            <h2 className="text-2xl font-bold text-white flex items-center">
-              <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
-              </svg>
-              Products Collection ({filteredProducts.length})
-            </h2>
-            <p className="text-rose-100 mt-1">Manage your beautiful product collection</p>
-          </div>
-
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-20">
-              <div className="w-24 h-24 bg-gradient-to-r from-rose-200 to-pink-200 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-12 h-12 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {activeTab === "table" ? (
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            {/* Table View */}
+            <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 px-8 py-6">
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
                 </svg>
-              </div>
-              <h3 className="text-2xl font-bold text-gray-800 mb-4">No products found</h3>
-              <p className="text-gray-600 mb-8">Try searching for another product or add a new one.</p>
-              <Link 
-                to="/admin/add"
-                className="inline-flex items-center bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white px-8 py-4 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                </svg>
-                Add Product
-              </Link>
+                Products Collection ({filteredProducts.length})
+              </h2>
+              <p className="text-rose-100 mt-1">Manage your beautiful product collection</p>
             </div>
-          ) : (
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gradient-to-r from-rose-50 to-pink-50">
@@ -195,28 +221,24 @@ const AdminDashboard = () => {
                     <tr key={product.id} className="hover:bg-rose-50/50 transition-colors">
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="flex items-center">
-                          <img 
-                            src={product.imageUrl} 
+                          <img
+                            src={product.imageUrl}
                             alt={product.name}
                             className="h-16 w-16 rounded-2xl object-cover mr-6 border-2 border-rose-200"
                             onError={(e) => {
-                              e.target.src = 'https://via.placeholder.com/64x64/F3F4F6/9CA3AF?text=No+Image';
+                              e.target.src = "https://via.placeholder.com/64x64/F3F4F6/9CA3AF?text=No+Image";
                             }}
                           />
                           <div>
-                            <div className="text-lg font-bold text-gray-900">
-                              {product.name}
-                            </div>
+                            <div className="text-lg font-bold text-gray-900">{product.name}</div>
                             <div className="text-sm text-gray-500">
-                              Added {product.createdAt ? new Date(product.createdAt).toLocaleDateString() : "N/A"}
+                              Views: {product.views || 0} | Clicks: {product.clicks || 0}
                             </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-8 py-6">
-                        <div className="text-sm text-gray-700 max-w-xs truncate">
-                          {product.description}
-                        </div>
+                        <div className="text-sm text-gray-700 max-w-xs truncate">{product.description}</div>
                       </td>
                       <td className="px-8 py-6 whitespace-nowrap">
                         <div className="text-lg font-bold bg-gradient-to-r from-rose-600 to-pink-600 bg-clip-text text-transparent">
@@ -230,7 +252,12 @@ const AdminDashboard = () => {
                             className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                              ></path>
                             </svg>
                             <span>Edit</span>
                           </Link>
@@ -239,7 +266,12 @@ const AdminDashboard = () => {
                             className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center space-x-1"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              ></path>
                             </svg>
                             <span>Delete</span>
                           </button>
@@ -250,8 +282,29 @@ const AdminDashboard = () => {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-white/50 overflow-hidden">
+            {/* Charts View */}
+            <div className="bg-gradient-to-r from-rose-500 via-pink-500 to-purple-500 px-8 py-6">
+              <h2 className="text-2xl font-bold text-white flex items-center">
+                <svg className="w-6 h-6 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
+                  ></path>
+                </svg>
+                Product Analytics
+              </h2>
+              <p className="text-rose-100 mt-1">Visualize product views and clicks</p>
+            </div>
+            <div className="p-8">
+              <Bar data={chartData} options={{ responsive: true, plugins: { legend: { position: "top" } } }} />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

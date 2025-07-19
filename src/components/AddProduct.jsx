@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { db, storage } from "../firebase";
+import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage"; // Add this import
 import { useNavigate } from "react-router-dom";
 
 const AddProduct = () => {
@@ -280,25 +279,46 @@ const AddProduct = () => {
     }
   };
 
+  // Replace the Firebase handleImageUpload with imgbb upload
   const handleImageUpload = async (e, type, index = null) => {
     const file = e.target.files[0];
     if (!file) return;
+    
     setLoading(true);
+    
     try {
-      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      if (type === "main") {
-        setForm({ ...form, imageUrl: url });
-      } else if (type === "additional" && index !== null) {
-        const newAdditionalImages = [...form.additionalImages];
-        newAdditionalImages[index] = url;
-        setForm({ ...form, additionalImages: newAdditionalImages });
+      // Create FormData for imgbb API
+      const formData = new FormData();
+      formData.append('image', file);
+      
+      // Upload to imgbb (you can get a free API key from imgbb.com)
+      const response = await fetch(`https://api.imgbb.com/1/upload?key=${import.meta.env.VITE_IMGBB_API_KEY}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        const imageUrl = data.data.url;
+        
+        if (type === "main") {
+          setForm({ ...form, imageUrl: imageUrl });
+        } else if (type === "additional" && index !== null) {
+          const newAdditionalImages = [...form.additionalImages];
+          newAdditionalImages[index] = imageUrl;
+          setForm({ ...form, additionalImages: newAdditionalImages });
+        }
+        
+        setSuccess("Image uploaded successfully!");
+      } else {
+        setError("Image upload failed. Please try again.");
       }
-      setSuccess("Image uploaded successfully!");
     } catch (error) {
+      console.error("Upload error:", error);
       setError("Image upload failed. Please try again.");
     }
+    
     setLoading(false);
   };
 

@@ -1,11 +1,24 @@
 // src/components/ProductCard.jsx
 import React from "react";
+import { doc, updateDoc, increment } from "firebase/firestore";
+import { db } from "../firebase"; // Adjust the import based on your project structure
 
 const ProductCard = ({ product }) => {
   const handleWhatsAppOrder = () => {
     const message = `Hi! I'm interested in ${product.name} (₨${product.price}). Can you please provide more details?`;
     const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
+  };
+
+  const handleProductClick = async (productId) => {
+    try {
+      const productRef = doc(db, "products", productId);
+      await updateDoc(productRef, {
+        clicks: increment(1), // Increment clicks by 1
+      });
+    } catch (error) {
+      console.error("Error updating product clicks:", error);
+    }
   };
   
   return (
