@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.jpg";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,10 +24,7 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-r from-[#660033] to-[#AD1457] rounded-lg flex items-center justify-center">
-              <img src="src\assets\logo.jpg" alt="logo" />
-              {/* <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
-              </svg> */}
+              <img src={logo} alt="logo" className="h-full w-full object-cover rounded-lg" />
             </div>
             <div>
               <span className="text-xl font-bold text-gray-800">Nainzaka Aesthetics</span>
@@ -80,8 +78,8 @@ const Navbar = () => {
             
             {/* Login Link for non-admin users */}
             {!currentUser && (
-              <Link 
-                to="/admin/login" 
+              <Link
+                to="/admin/login"
                 className="text-gray-700 hover:text-[#660033] transition-colors font-medium"
               >
                 Admin Login

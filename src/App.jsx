@@ -13,6 +13,9 @@ import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 import AddProduct from "./components/AddProduct";
 import EditProduct from "./components/EditProduct";
+import NotFound from "./components/NotFound";
+import ScrollToTop from "./components/ScrollToTop";
+import AdminRedirect from "./components/AdminRedirect";
 import "./App.css";
 
 // Component to conditionally render Navbar and Footer
@@ -37,6 +40,7 @@ const App = () => {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop /> {/* Ensure pages start at the top */}
         <div className="App">
           <Layout>
             <Routes>
@@ -45,10 +49,13 @@ const App = () => {
               <Route path="/products" element={<Products />} />
               <Route path="/product/:id" element={<ProductDetail />} />
               <Route path="/about" element={<About />} />
-              
-              {/* Admin Login Route */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              
+
+              {/* Admin Redirect Route */}
+              <Route path="/admin/login" element={<AdminRedirect />} />
+
+              {/* Actual Admin Login Route */}
+              <Route path="/admin/actual-login" element={<AdminLogin />} />
+
               {/* Protected Admin Routes */}
               <Route 
                 path="/admin/dashboard" 
@@ -74,6 +81,9 @@ const App = () => {
                   </ProtectedRoute>
                 } 
               />
+
+              {/* 404 Page */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
         </div>

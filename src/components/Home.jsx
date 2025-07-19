@@ -4,6 +4,7 @@ import { db } from "../firebase";
 import { collection, getDocs } from "firebase/firestore";
 import { Link } from "react-router-dom";
 import ProductCard from "./ProductCard";
+import heroImage from "../assets/nainzaka logo.jpg";
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
@@ -80,7 +81,7 @@ const Home = () => {
               <div className="aspect-square bg-gray-50 flex items-center justify-center">
                 {/* <div className="text-6xl">✨</div> */}
                 <img
-                  src="src/assets/nainzaka logo.jpg"
+                  src={heroImage}
                   alt="Hero Image"
                   className="w-full h-full object-cover rounded-lg shadow-lg"
                 />
