@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
+import { fetchDescription } from "../utils/groq";
 
 const EditProduct = () => {
   const navigate = useNavigate();
@@ -93,6 +94,25 @@ const EditProduct = () => {
       alert("Error updating product. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateDescription = async () => {
+    const prompt = `
+      Generate a product description for:
+      Name: ${formData.name}
+      Category: ${formData.category}
+      Price: ₨${formData.price}
+      Sale Price: ₨${formData.salePrice || "N/A"}
+      Stock Status: ${formData.inStock ? "In Stock" : "Out of Stock"}
+      Featured: ${formData.featured ? "Yes" : "No"}
+    `;
+
+    try {
+      const description = await fetchDescription(prompt);
+      setFormData((prev) => ({ ...prev, description }));
+    } catch (error) {
+      alert("Failed to generate description: " + error.message);
     }
   };
 
@@ -270,11 +290,19 @@ const EditProduct = () => {
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
+                  <span
+                    onClick={generateDescription}
+                    className="ml-2 text-[#660033] hover:text-[#4A0025] cursor-pointer transition-colors"
+                  >
+                    [Generate]
+                  </span>
                 </label>
                 <textarea
                   name="description"
                   value={formData.description}
-                  onChange={handleInputChange}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  }
                   rows="4"
                   className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#660033] focus:border-transparent"
                   placeholder="Enter product description..."

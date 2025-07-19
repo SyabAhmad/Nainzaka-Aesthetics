@@ -220,6 +220,51 @@ const Home = () => {
           </div>
         </div>
       </section>
+      <section className="py-16 bg-[#660033] text-white">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      {/* Text Section */}
+      <div>
+        <h2 className="text-3xl font-light mb-6">We Deliver All Over Pakistan</h2>
+        <p className="text-lg mb-8 leading-relaxed">
+          No matter where you are, we ensure your favorite beauty products reach you quickly and safely. Experience fast delivery and exceptional service across the country.
+        </p>
+        <Link
+          to="/products"
+          className="bg-white text-[#660033] px-8 py-3 font-medium rounded-lg hover:bg-gray-100 transition-colors"
+        >
+          Explore Products
+        </Link>
+      </div>
+
+      {/* Map Section */}
+<div className="relative group">
+  <div className="aspect-video bg-gray-50 rounded-xl overflow-hidden shadow-xl transition-all duration-300 hover:shadow-2xl">
+    <iframe
+      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3625525.422345692!2d66.3475365!3d27.8475805!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x38db52d2f8fd751f%3A0x46b7a1f7e614925c!2sPakistan!5e0!3m2!1sen!2s!4v1620000000000!5m2!1sen!2s"
+      width="100%"
+      height="100%"
+      style={{ border: 0 }}
+      allowFullScreen
+      loading="lazy"
+      className="rounded-xl"
+      title="Interactive Pakistan Map"
+    ></iframe>
+    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl pointer-events-none"></div>
+  </div>
+  <div className="absolute bottom-4 left-4 bg-white/90 px-3 py-1.5 rounded-lg shadow-sm">
+    <p className="text-sm font-medium text-gray-800 flex items-center">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-[#660033]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      Pakistan
+    </p>
+  </div>
+</div>
+    </div>
+  </div>
+</section>
 
       {/* CTA Section */}
       <section className="py-16 bg-gray-900">
@@ -238,7 +283,7 @@ const Home = () => {
               Shop Now
             </Link>
             <a
-              href="https://wa.me/923001234567"
+              href="https://wa.me/923404430083"
               className="border border-white hover:bg-white hover:text-gray-900 text-white px-8 py-3 font-medium transition-colors"
             >
               Contact Us

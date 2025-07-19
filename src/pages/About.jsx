@@ -177,7 +177,7 @@ const About = () => (
             Browse Products
           </a>
           <a
-            href="https://wa.me/923001234567"
+            href="https://wa.me/923404430083"
             className="border border-gray-300 hover:border-gray-900 text-gray-900 px-8 py-4 rounded-full font-semibold text-lg transition-colors inline-flex items-center justify-center space-x-2"
           >
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">

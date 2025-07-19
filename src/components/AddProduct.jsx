@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { db } from "../firebase";
 import { collection, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
+import { fetchDescription } from "../utils/groq";
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -25,36 +26,36 @@ const AddProduct = () => {
     { id: "serums", name: "Serums & Treatments", icon: "💧" },
     { id: "sunscreens", name: "Sunscreens", icon: "☀️" },
     { id: "masks", name: "Face Masks", icon: "🎭" },
-    { id: "lipbody", name: "Lip & Body Care", icon: "💋" }
+    { id: "lipbody", name: "Lip & Body Care", icon: "💋" },
   ];
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
-    
+
     if (files.length > 3) {
       alert("You can only upload up to 3 images");
       return;
     }
 
     // Validate file types
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-    const invalidFiles = files.filter(file => !validTypes.includes(file.type));
-    
+    const validTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    const invalidFiles = files.filter((file) => !validTypes.includes(file.type));
+
     if (invalidFiles.length > 0) {
       alert("Please select only image files (JPEG, PNG, WebP)");
       return;
     }
 
     // Check file sizes (max 5MB per image for ImgBB)
-    const largeFiles = files.filter(file => file.size > 5 * 1024 * 1024);
+    const largeFiles = files.filter((file) => file.size > 5 * 1024 * 1024);
     if (largeFiles.length > 0) {
       alert("Each image must be less than 5MB");
       return;
@@ -63,7 +64,7 @@ const AddProduct = () => {
     setSelectedImages(files);
 
     // Create previews
-    const previews = files.map(file => {
+    const previews = files.map((file) => {
       return new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = (e) => resolve(e.target.result);
@@ -84,34 +85,34 @@ const AddProduct = () => {
   const uploadToImgBB = async (imageFile) => {
     // Use import.meta.env for Vite environment variables
     const apiKey = import.meta.env.VITE_IMGBB_API_KEY;
-    
+
     console.log("API Key:", apiKey); // Debug log
-    
+
     if (!apiKey) {
       throw new Error("ImgBB API key is not configured. Check your .env file.");
     }
 
     const uploadFormData = new FormData();
-    uploadFormData.append('image', imageFile);
+    uploadFormData.append("image", imageFile);
 
     try {
       // Use query parameter method for ImgBB API
       const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-        method: 'POST',
+        method: "POST",
         body: uploadFormData,
       });
 
       const result = await response.json();
-      
+
       console.log("ImgBB Response:", result); // Debug log
-      
+
       if (!result.success) {
-        throw new Error(result.error?.message || 'Failed to upload image to ImgBB');
+        throw new Error(result.error?.message || "Failed to upload image to ImgBB");
       }
 
       return result.data.url;
     } catch (error) {
-      console.error('ImgBB upload error:', error);
+      console.error("ImgBB upload error:", error);
       throw new Error(`Image upload failed: ${error.message}`);
     }
   };
@@ -124,14 +125,14 @@ const AddProduct = () => {
     setImageUploading(true);
     try {
       const imageUrls = [];
-      
+
       // Upload images one by one for better error handling
       for (let i = 0; i < selectedImages.length; i++) {
         console.log(`Uploading image ${i + 1}/${selectedImages.length}`);
         const url = await uploadToImgBB(selectedImages[i]);
         imageUrls.push(url);
       }
-      
+
       return imageUrls;
     } finally {
       setImageUploading(false);
@@ -140,7 +141,7 @@ const AddProduct = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!formData.name || !formData.price || !formData.category) {
       alert("Please fill in all required fields");
       return;
@@ -155,7 +156,7 @@ const AddProduct = () => {
     try {
       // Upload images first
       const imageUrls = await uploadImages();
-      
+
       // Add product to database
       await addDoc(collection(db, "products"), {
         ...formData,
@@ -167,7 +168,7 @@ const AddProduct = () => {
         views: 0,
         clicks: 0,
       });
-      
+
       alert("Product added successfully!");
       navigate("/admin/dashboard");
     } catch (error) {
@@ -175,6 +176,25 @@ const AddProduct = () => {
       alert("Error adding product: " + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const generateDescription = async () => {
+    const prompt = `
+      Generate a product description for:
+      Name: ${formData.name}
+      Category: ${formData.category}
+      Price: ₨${formData.price}
+      Sale Price: ₨${formData.salePrice || "N/A"}
+      Stock Status: ${formData.inStock ? "In Stock" : "Out of Stock"}
+      Featured: ${formData.featured ? "Yes" : "No"}
+    `;
+
+    try {
+      const description = await fetchDescription(prompt);
+      setFormData((prev) => ({ ...prev, description }));
+    } catch (error) {
+      alert("Failed to generate description: " + error.message);
     }
   };
 
@@ -204,13 +224,11 @@ const AddProduct = () => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-6">Product Information</h2>
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Product Name */}
               <div className="lg:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Product Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Product Name *</label>
                 <input
                   type="text"
                   name="name"
@@ -224,9 +242,7 @@ const AddProduct = () => {
 
               {/* Category */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                 <select
                   name="category"
                   value={formData.category}
@@ -245,9 +261,7 @@ const AddProduct = () => {
 
               {/* Stock Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Stock Status
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Stock Status</label>
                 <div className="flex items-center space-x-6">
                   <label className="flex items-center">
                     <input
@@ -274,9 +288,7 @@ const AddProduct = () => {
 
               {/* Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Regular Price (₨) *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Regular Price (₨) *</label>
                 <input
                   type="number"
                   name="price"
@@ -312,6 +324,12 @@ const AddProduct = () => {
               <div className="lg:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Description
+                  <span
+                    onClick={generateDescription}
+                    className="ml-2 text-[#660033] hover:text-[#4A0025] cursor-pointer transition-colors"
+                  >
+                    [Generate]
+                  </span>
                 </label>
                 <textarea
                   name="description"
@@ -328,7 +346,7 @@ const AddProduct = () => {
           {/* Image Upload Section */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <h2 className="text-lg font-medium text-gray-900 mb-6">Product Images</h2>
-            
+
             {/* File Upload */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">

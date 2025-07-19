@@ -16,6 +16,7 @@ import EditProduct from "./components/EditProduct";
 import NotFound from "./components/NotFound";
 import ScrollToTop from "./components/ScrollToTop";
 import AdminRedirect from "./components/AdminRedirect";
+import Chatbot from "./components/Chatbot";
 import "./App.css";
 
 // Component to conditionally render Navbar and Footer
@@ -86,6 +87,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
+          <Chatbot /> {/* Add Chatbot */}
         </div>
       </Router>
     </AuthProvider>

@@ -16,7 +16,7 @@ const ProductCard = ({ product }) => {
       });
       // Open WhatsApp
       const message = `Hi! I'm interested in ${product.name} (₨${product.price.toLocaleString()})`;
-      const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(message)}`;
+      const whatsappUrl = `https://wa.me/923404430083?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     } catch (error) {
       console.error("Error updating product stats:", error);

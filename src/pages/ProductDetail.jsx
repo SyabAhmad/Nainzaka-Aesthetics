@@ -10,6 +10,7 @@ const ProductDetail = () => {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [recommended, setRecommended] = useState([]);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -63,8 +64,8 @@ const ProductDetail = () => {
       });
       
       const price = product.salePrice || product.price;
-      const message = `Hi! I'm interested in ${product.name} (₨${price.toLocaleString()})`;
-      const whatsappUrl = `https://wa.me/923001234567?text=${encodeURIComponent(message)}`;
+      const message = `Hi Nainzaka Aesthetics! I'm interested in ${product.name} (₨${price.toLocaleString()})`;
+      const whatsappUrl = `https://wa.me/923404430083?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
     } catch (error) {
       console.error("Error updating product clicks:", error);
@@ -220,12 +221,24 @@ const ProductDetail = () => {
               {/* Description */}
               <div className="text-gray-600 mb-5">
                 <h3 className="text-base font-medium text-gray-900 mb-2">Description</h3>
-                <p className="text-base leading-relaxed">{product.description}</p>
+                <p
+                  className={`text-base leading-relaxed text-left whitespace-pre-line ${
+                    showFullDescription ? "" : "line-clamp-3"
+                  }`}
+                >
+                  {product.description.replace(/\*\*/g, "").trim()}
+                </p>
+                <button
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="text-[#660033] hover:text-[#4A0025] text-sm font-medium mt-2"
+                >
+                  {showFullDescription ? "Show Less" : "See More"}
+                </button>
               </div>
 
               {/* Product Details */}
               <div className="mb-5">
-                <h3 className="text-base font-medium text-gray-900 mb-3">Product Details</h3>
+                <h3 className="text-base font-medium text-gray-900 mb-3"></h3>
                 <div className="bg-gray-50 rounded-md p-3 space-y-2 text-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-gray-600">Category:</span>
